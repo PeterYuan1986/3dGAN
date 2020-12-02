@@ -8,8 +8,9 @@ from image_preprocess import *
 
 
 class GAN():
-    def __init__(self, width, height, depth, channel, dataset, ch_in=64, z=1000):
+    def __init__(self, width, height, depth, channel, dataset, dataset_name ,ch_in=64, z=1000):
         # Input shape
+        self.dataset_name=dataset_name
         self.img_width = width
         self.img_height = height
         self.img_depth = depth
@@ -17,8 +18,9 @@ class GAN():
         self.img_shape = (self.img_width, self.img_height, self.img_depth, self.img_channel)
         self.latent_dim = z
         self.ch_in = ch_in
-        optimizer = Adam(0.0002, 0.5)
+       # optimizer =SGD(learning_rate=0.0001, momentum=0.0, nesterov=False)
         # Build and compile the discriminator
+        optimizer = Adam(0.0002, 0.5)
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         # Build the generator
@@ -34,39 +36,40 @@ class GAN():
         # The combined model (stacked generator and discriminator)
         # Trains the generator to fool the discriminator
         self.combined = Model(z, valid)
+
         self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
-        self.dataset = np.array(dataset)
+        self.dataset = dataset
 
     def build_generator(self):
         ch_in = self.ch_in
-        model = Sequential()
+        model = Sequential(name="Gnerator")
         model.add(Reshape((1, 1, 1, 1000), input_shape=(1000,)))
         model.add(Conv3DTranspose(ch_in * 8, kernel_size=4, strides=1, padding='valid',
-                                                      use_bias=False))
+                                  use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv2',
-                                            use_bias=False))
+                         use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in * 2, 3, strides=1, padding='same', name='conv3',
-                                            use_bias=False))
+                         use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in, 3, strides=1, padding='same', name='conv4',
-                                            use_bias=False))
+                         use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(1, 3, strides=1, padding='same', name='conv5',
-                                            use_bias=False))
+                         use_bias=False))
         model.add(Activation("tanh"))
         model.summary()
         noise = Input(shape=(self.latent_dim,))
@@ -74,10 +77,11 @@ class GAN():
         return Model(noise, img)
 
     def build_discriminator(self):
-        model = Sequential()
+        model = Sequential(name="Discriminator")
         ch_in = self.ch_in
         model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(64, 64, 64, 1)))
         model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
         model.add(Conv3D(ch_in * 2, 4, strides=2, padding='same', name='conv2'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
@@ -86,13 +90,11 @@ class GAN():
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-
         model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv4'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-
-        model.add(Conv3D(ch_in * 8, 3, strides=1, padding='same', name='conv5'))
+        model.add(Conv3D(1, 4, strides=1, padding='valid', name='conv5'))
         model.add(Flatten())
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
@@ -100,7 +102,7 @@ class GAN():
         validity = model(img)
         return Model(img, validity)
 
-    def train(self, epochs, batch_size=128, save_interval=50):
+    def train(self, epochs, batch_size=128, save_interval=200):
 
         # Load the dataset
         X_train = self.dataset
@@ -112,8 +114,8 @@ class GAN():
             # Train Discriminator
             # ---------------------
             # Select a random half of images
-            idx = np.random.randint(0, X_train.shape[0], batch_size)
-            imgs = X_train[idx]
+            # idx = np.random.randint(0, X_train.shape[0], batch_size)
+            imgs = next(X_train)
             # Sample noise and generate a batch of new images
             noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
             gen_imgs = self.generator.predict(noise)
@@ -127,8 +129,10 @@ class GAN():
             # ---------------------
             # Train the generator (wants discriminator to mistake
             # images as real)
-            g_loss = self.combined.train_on_batch(noise, valid)
-        # Plot the progress
+            noise1 = np.random.normal(0, 1, (batch_size, self.latent_dim))
+            g_loss = self.combined.train_on_batch(noise1, valid)
+
+            # Plot the progress
             print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
             if epoch % save_interval == 0:
                 self.save_imgs(epoch)
@@ -136,6 +140,7 @@ class GAN():
     def save_imgs(self, epoch):
         noise = np.random.normal(0, 1, (1, self.latent_dim))
         gen_imgs = self.generator.predict(noise)
+        gen_imgs = postprocess_images(gen_imgs)
         new_image = nib.Nifti1Image(np.int16(gen_imgs[0]), affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
@@ -154,12 +159,12 @@ def parse_args():
     parser.add_argument('--img_depth', type=int, default='64', help='img_depth')
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
-    parser.add_argument('--epochs', type=int, default='1000', help='epochs')
-    parser.add_argument('--batch_size', type=int, default=4, help='The size of batch size')
+    parser.add_argument('--epochs', type=int, default='10000', help='epochs')
+    parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
 
     parser.add_argument('--grw', type=int, default='10', help='gradient_penalty_weight: Lamda1')
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
-    parser.add_argument('--lr', type=int, default=1e-6, help='learning rate for all four model')
+    parser.add_argument('--lr', type=int, default=1e-4, help='learning rate for all four model')
     parser.add_argument('--beta1', type=float, default=0.5, help='Decay rate for 1st moment of Adam')
     parser.add_argument('--latentdimension', type=int, default=1000, help='latent dimension')
     parser.add_argument('--iteration', type=int, default=200000, help='total iteration')
@@ -202,8 +207,11 @@ def main():
     dataset_num = len(img_class.dataset)  # all the images with different domain
     print("Dataset number : ", dataset_num)
     gpu_device = '/gpu:0'
-    dataset = dataset.apply(prefetch_to_device(gpu_device, buffer_size=AUTOTUNE))
-    gan = GAN(args.img_width, args.img_height, args.img_depth, args.img_channel, img_class.dataset, z=args.latentdimension)
+    data_set = dataset.shuffle(buffer_size=dataset_num, reshuffle_each_iteration=True).repeat()
+    data_set = data_set.batch(args.batch_size, drop_remainder=True)
+    data_set = data_set.apply(prefetch_to_device(gpu_device, buffer_size=AUTOTUNE))
+    data_set_iter = iter(data_set)
+    gan = GAN(args.img_width, args.img_height, args.img_depth, args.img_channel, data_set_iter,dataset_name=args.dataset, z=args.latentdimension)
     gan.train(epochs=args.epochs, batch_size=args.batch_size, save_interval=50)
 
 
