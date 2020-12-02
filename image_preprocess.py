@@ -52,6 +52,6 @@ def preprocess_fit_train_image(min,max,images):
 
 def postprocess_images(images):
     images = tf.squeeze(images,[-1]) # [1, 2, 3, 1]
-    images = adjust_dynamic_range(images, range_in=(-1, 1.0), range_out=(0.0, 1024), out_dtype=tf.dtypes.float32)
+    images = adjust_dynamic_range(images, range_in=(-1, 1.0), range_out=(0.0, 255), out_dtype=tf.dtypes.float32)
     images = tf.cast(images, dtype=tf.dtypes.int16)
     return images

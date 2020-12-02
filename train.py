@@ -61,14 +61,29 @@ class GAN():
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in, 3, strides=1, padding='same', name='conv4',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
+        model.add(Conv3D(ch_in /2, 3, strides=1, padding='same', name='conv5',
+                         use_bias=False))
+        model.add(BatchNormalization(axis=-1))
+        model.add(ReLU())
+
+        model.add(Conv3D(ch_in / 4, 3, strides=1, padding='same', name='conv6',
+                         use_bias=False))
+        model.add(BatchNormalization(axis=-1))
+        model.add(ReLU())
+
         model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(1, 3, strides=1, padding='same', name='conv5',
+        model.add(Conv3D(ch_in/8, 3, strides=1, padding='same', name='conv7',
+                         use_bias=False))
+        model.add(BatchNormalization(axis=-1))
+        model.add(ReLU())
+
+        model.add(UpSampling3D(size=2, data_format=None))
+        model.add(Conv3D(1, 3, strides=1, padding='same', name='conv8',
                          use_bias=False))
         model.add(Activation("tanh"))
         model.summary()
@@ -94,7 +109,25 @@ class GAN():
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
-        model.add(Conv3D(1, 4, strides=1, padding='valid', name='conv5'))
+
+        model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv5'))
+        model.add(BatchNormalization(momentum=0.8))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+
+        model.add(Conv3D(ch_in * 2, 3, strides=1, padding='same', name='conv6'))
+        model.add(BatchNormalization(momentum=0.8))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+
+        model.add(Conv3D(ch_in, 3, strides=1, padding='same', name='conv7'))
+        model.add(BatchNormalization(momentum=0.8))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(0.25))
+
+
+
+        model.add(Conv3D(1, 4, strides=1, padding='valid', name='conv8'))
         model.add(Flatten())
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
@@ -133,7 +166,7 @@ class GAN():
             g_loss = self.combined.train_on_batch(noise1, valid)
 
             # Plot the progress
-            print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
+            print("%d/%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch,epochs,d_loss[0]*10000, 100 * d_loss[1], g_loss*10000))
             if epoch % save_interval == 0:
                 self.save_imgs(epoch)
 
@@ -160,14 +193,14 @@ def parse_args():
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
     parser.add_argument('--epochs', type=int, default='10000', help='epochs')
-    parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
+    parser.add_argument('--batch_size', type=int, default=2, help='The size of batch size')
 
     parser.add_argument('--grw', type=int, default='10', help='gradient_penalty_weight: Lamda1')
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
     parser.add_argument('--lr', type=int, default=1e-4, help='learning rate for all four model')
     parser.add_argument('--beta1', type=float, default=0.5, help='Decay rate for 1st moment of Adam')
     parser.add_argument('--latentdimension', type=int, default=1000, help='latent dimension')
-    parser.add_argument('--iteration', type=int, default=200000, help='total iteration')
+    parser.add_argument('--iteration', type=int, default=400000, help='total iteration')
 
     parser.add_argument('--g_iter', type=int, default=1, help='g_iter')
     parser.add_argument('--cd_iter', type=int, default=1, help='cd_iter')
@@ -212,7 +245,7 @@ def main():
     data_set = data_set.apply(prefetch_to_device(gpu_device, buffer_size=AUTOTUNE))
     data_set_iter = iter(data_set)
     gan = GAN(args.img_width, args.img_height, args.img_depth, args.img_channel, data_set_iter,dataset_name=args.dataset, z=args.latentdimension)
-    gan.train(epochs=args.epochs, batch_size=args.batch_size, save_interval=50)
+    gan.train(epochs=args.epochs, batch_size=args.batch_size, save_interval=2000)
 
 
 if __name__ == '__main__':
