@@ -60,7 +60,7 @@ class GAN():
     def build_generator(self):
         ch_in = self.ch_in
         model = Sequential(name="Gnerator")
-        model.add(Reshape((1, 1, 1, 1000), input_shape=(1000,)))
+        model.add(Reshape((1, 1, 1, self.latent_dim), input_shape=(self.latent_dim,)))
         model.add(Conv3DTranspose(ch_in * 8, kernel_size=4, strides=1, padding='valid',
                                   use_bias=False))
         model.add(BatchNormalization(axis=-1))
@@ -220,7 +220,7 @@ def parse_args():
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
     parser.add_argument('--lr', type=int, default=1e-4, help='learning rate for all four model')
     parser.add_argument('--beta1', type=float, default=0.5, help='Decay rate for 1st moment of Adam')
-    parser.add_argument('--latentdimension', type=int, default=1000, help='latent dimension')
+    parser.add_argument('--latentdimension', type=int, default=3000, help='latent dimension')
     parser.add_argument('--iteration', type=int, default=400000, help='total iteration')
 
     parser.add_argument('--g_iter', type=int, default=1, help='g_iter')
