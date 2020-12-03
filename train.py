@@ -8,9 +8,10 @@ from image_preprocess import *
 
 
 class GAN():
-    def __init__(self, width, height, depth, channel, dataset, dataset_name ,batch_size, epochs, save_interval, checkpoint_prefix, z=1000,ch_in=64,):
+    def __init__(self, width, height, depth, channel, dataset, dataset_name, batch_size, epochs, save_interval,
+                 checkpoint_prefix, z=1000, ch_in=64, ):
         # Input shape
-        self.dataset_name=dataset_name
+        self.dataset_name = dataset_name
         self.img_width = width
         self.img_height = height
         self.img_depth = depth
@@ -20,9 +21,9 @@ class GAN():
         self.ch_in = ch_in
         self.epochs = epochs
         self.batch_size = batch_size
-        self.save_interval=save_interval
-        self.checkpoint_prefix=checkpoint_prefix
-       # optimizer =SGD(learning_rate=0.0001, momentum=0.0, nesterov=False)
+        self.save_interval = save_interval
+        self.checkpoint_prefix = checkpoint_prefix
+        # optimizer =SGD(learning_rate=0.0001, momentum=0.0, nesterov=False)
         # Build and compile the discriminator
         optimizer = Adam(0.0002, 0.5)
         self.discriminator = self.build_discriminator()
@@ -42,20 +43,17 @@ class GAN():
         self.combined = Model(z, valid)
         self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
 
-
         """ Checkpoint """
-        self.ckpt = tf.train.Checkpoint(discriminator=self.discriminator,generator=self.generator,optimizer=optimizer)
+        self.ckpt = tf.train.Checkpoint(discriminator=self.discriminator, generator=self.generator, optimizer=optimizer)
         self.manager = tf.train.CheckpointManager(self.ckpt, self.checkpoint_prefix, max_to_keep=1)
 
         self.start_epoch = 0
         if self.manager.latest_checkpoint:
             self.ckpt.restore(self.manager.latest_checkpoint).expect_partial()
-            self.start_epoch = int(self.manager.latest_checkpoint.split('-')[-1]) * save_interval + 1
+            self.start_epoch = int(self.manager.latest_checkpoint.split('-')[-1])
             print('Latest checkpoint restored!!')
         else:
             print('Not restoring from saved checkpoint')
-
-
 
         self.dataset = dataset
 
@@ -85,7 +83,7 @@ class GAN():
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(Conv3D(ch_in /2, 3, strides=1, padding='same', name='conv5',
+        model.add(Conv3D(ch_in / 2, 3, strides=1, padding='same', name='conv5',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
@@ -96,7 +94,7 @@ class GAN():
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(ch_in/8, 3, strides=1, padding='same', name='conv7',
+        model.add(Conv3D(ch_in / 8, 3, strides=1, padding='same', name='conv7',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
@@ -144,8 +142,6 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-
-
         model.add(Conv3D(1, 4, strides=1, padding='valid', name='conv8'))
         model.add(Flatten())
         model.add(Dense(1, activation='sigmoid'))
@@ -161,7 +157,7 @@ class GAN():
         # Adversarial ground truths
         valid = np.ones((self.batch_size, 1))
         fake = np.zeros((self.batch_size, 1))
-        for epoch in range(self.start_epoch,self.epochs):
+        for epoch in range(self.start_epoch, self.epochs):
             # ---------------------
             # Train Discriminator
             # ---------------------
@@ -185,17 +181,20 @@ class GAN():
             g_loss = self.combined.train_on_batch(noise1, valid)
 
             # Plot the progress
-            print("%d/%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch,self.epochs,d_loss[0]*100, 100 * d_loss[1], g_loss*100))
-            if epoch % self.save_interval == 0 and epoch!=0:
-                self.manager.save(checkpoint_number=epoch + 1)
-                self.save_imgs(epoch)
+            print("%d/%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (
+            epoch, self.epochs, d_loss[0] * 100, 100 * d_loss[1], g_loss * 100))
+           # if epoch % self.save_interval == 0 and epoch != 0:
+            self.manager.save(checkpoint_number=epoch + 1)
+            self.save_imgs(epoch)
         self.manager.save(checkpoint_number=self.epochs)
 
     def save_imgs(self, epoch):
         noise = np.random.normal(0, 1, (1, self.latent_dim))
-        gen_imgs = self.generator.predict(noise)
-        gen_imgs = postprocess_images(gen_imgs)
-        new_image = nib.Nifti1Image(np.int16(gen_imgs[0]), affine=np.eye(4))
+        k=np.mean(noise)
+        gen_img = self.generator.predict(noise)
+        gen_imgs = postprocess_images(gen_img)
+        tem=np.uint8(gen_imgs[0])
+        new_image = nib.Nifti1Image(tem, affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
         if not os.path.exists(sample_dir):
@@ -265,7 +264,9 @@ def main():
     data_set = data_set.batch(args.batch_size, drop_remainder=True)
     data_set = data_set.apply(prefetch_to_device(gpu_device, buffer_size=AUTOTUNE))
     data_set_iter = iter(data_set)
-    gan = GAN(args.img_width, args.img_height, args.img_depth, args.img_channel, data_set_iter, batch_size=args.batch_size, epochs=args.epochs, save_interval=args.save_interval, dataset_name=args.dataset,checkpoint_prefix=checkpoint_prefix, z=args.latentdimension)
+    gan = GAN(args.img_width, args.img_height, args.img_depth, args.img_channel, data_set_iter,
+              batch_size=args.batch_size, epochs=args.epochs, save_interval=args.save_interval,
+              dataset_name=args.dataset, checkpoint_prefix=checkpoint_prefix, z=args.latentdimension)
     gan.train()
 
 
