@@ -213,7 +213,7 @@ def parse_args():
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
     parser.add_argument('--epochs', type=int, default='400000', help='epochs')
-    parser.add_argument('--batch_size', type=int, default=2, help='The size of batch size')
+    parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
     parser.add_argument('--save_interval', type=int, default=2000, help='save_interval')
 
     parser.add_argument('--grw', type=int, default='10', help='gradient_penalty_weight: Lamda1')
