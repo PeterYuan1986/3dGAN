@@ -9,7 +9,7 @@ from image_preprocess import *
 
 class GAN():
     def __init__(self, width, height, depth, channel, dataset, dataset_name, batch_size, epochs, save_interval,
-                 checkpoint_prefix, z=1000, ch_in=128, ):
+                 checkpoint_prefix, z=1000, ch_in=64, ):
         # Input shape
         self.dataset_name = dataset_name
         self.img_width = width
