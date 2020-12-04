@@ -9,7 +9,7 @@ from image_preprocess import *
 
 class GAN():
     def __init__(self, width, height, depth, channel, dataset, dataset_name, batch_size, epochs, save_interval,
-                 checkpoint_prefix, z=1000, ch_in=64, ):
+                 checkpoint_prefix, z=1000, ch_in=128, ):
         # Input shape
         self.dataset_name = dataset_name
         self.img_width = width
@@ -23,11 +23,11 @@ class GAN():
         self.batch_size = batch_size
         self.save_interval = save_interval
         self.checkpoint_prefix = checkpoint_prefix
-        # optimizer =SGD(learning_rate=0.0001, momentum=0.0, nesterov=False)
+        #optimizer =SGD(learning_rate=0.0001, momentum=0.0, nesterov=False)
         # Build and compile the discriminator
-        optimizer = Adam(0.0002, 0.5)
+        optimizer = Adam(0.00002, 0.5)
         self.discriminator = self.build_discriminator()
-        self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+        self.discriminator.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
         # Build the generator
         self.generator = self.build_generator()
         # The generator takes noise as input and generates imgs
@@ -41,7 +41,7 @@ class GAN():
         # The combined model (stacked generator and discriminator)
         # Trains the generator to fool the discriminator
         self.combined = Model(z, valid)
-        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
+        self.combined.compile(loss='mse', optimizer=optimizer)
 
         """ Checkpoint """
         self.ckpt = tf.train.Checkpoint(discriminator=self.discriminator, generator=self.generator, optimizer=optimizer)
@@ -73,28 +73,29 @@ class GAN():
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(ch_in * 2, 3, strides=1, padding='same', name='conv3',
+        model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv3',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(Conv3D(ch_in, 3, strides=1, padding='same', name='conv4',
+        model.add(Conv3D(ch_in*4, 3, strides=1, padding='same', name='conv4',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(Conv3D(ch_in / 2, 3, strides=1, padding='same', name='conv5',
-                         use_bias=False))
-        model.add(BatchNormalization(axis=-1))
-        model.add(ReLU())
-
-        model.add(Conv3D(ch_in / 4, 3, strides=1, padding='same', name='conv6',
+        model.add(Conv3D(ch_in *4, 3, strides=1, padding='same', name='conv5',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(ch_in / 8, 3, strides=1, padding='same', name='conv7',
+        model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv6',
+                         use_bias=False))
+        model.add(BatchNormalization(axis=-1))
+        model.add(ReLU())
+
+        model.add(UpSampling3D(size=2, data_format=None))
+        model.add(Conv3D(ch_in , 3, strides=1, padding='same', name='conv7',
                          use_bias=False))
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
@@ -111,7 +112,7 @@ class GAN():
     def build_discriminator(self):
         model = Sequential(name="Discriminator")
         ch_in = self.ch_in
-        model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(64, 64, 64, 1)))
+        model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(128, 128, 128, 1)))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(Conv3D(ch_in * 2, 4, strides=2, padding='same', name='conv2'))
@@ -127,17 +128,17 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-        model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv5'))
+        model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv5'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-        model.add(Conv3D(ch_in * 2, 3, strides=1, padding='same', name='conv6'))
+        model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv6'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-        model.add(Conv3D(ch_in, 3, strides=1, padding='same', name='conv7'))
+        model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv7'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
@@ -207,14 +208,14 @@ def parse_args():
     desc = "Tensorflow implementation of Alpha_WGAN"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--phase', type=str, default='train', help='train or test ?')
-    parser.add_argument('--img_width', type=int, default='64', help='img_width')
-    parser.add_argument('--img_height', type=int, default='64', help='img_height')
-    parser.add_argument('--img_depth', type=int, default='64', help='img_depth')
+    parser.add_argument('--img_width', type=int, default='128', help='img_width')
+    parser.add_argument('--img_height', type=int, default='128', help='img_height')
+    parser.add_argument('--img_depth', type=int, default='128', help='img_depth')
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
     parser.add_argument('--epochs', type=int, default='400000', help='epochs')
     parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
-    parser.add_argument('--save_interval', type=int, default=2000, help='save_interval')
+    parser.add_argument('--save_interval', type=int, default=1, help='save_interval')
 
     parser.add_argument('--grw', type=int, default='10', help='gradient_penalty_weight: Lamda1')
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
