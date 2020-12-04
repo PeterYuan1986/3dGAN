@@ -184,7 +184,7 @@ class GAN():
             # Plot the progress
             print("%d/%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (
             epoch, self.epochs, d_loss[0] * 100, 100 * d_loss[1], g_loss * 100))
-            if epoch % self.save_interval == 0 and epoch != 0:
+            if epoch % self.save_interval == 1000 and epoch != 0:
                 self.manager.save(checkpoint_number=epoch + 1)
                 self.save_imgs(epoch)
         self.manager.save(checkpoint_number=self.epochs)
