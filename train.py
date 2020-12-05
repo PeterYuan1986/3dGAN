@@ -221,7 +221,7 @@ def parse_args():
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
     parser.add_argument('--lr', type=int, default=1e-4, help='learning rate for all four model')
     parser.add_argument('--beta1', type=float, default=0.5, help='Decay rate for 1st moment of Adam')
-    parser.add_argument('--latentdimension', type=int, default=4000, help='latent dimension')
+    parser.add_argument('--latentdimension', type=int, default=3000, help='latent dimension')
     parser.add_argument('--iteration', type=int, default=400000, help='total iteration')
 
     parser.add_argument('--g_iter', type=int, default=1, help='g_iter')
