@@ -29,7 +29,7 @@ class Image_data:
 
         for idx, path in enumerate(self.dataset):
             image = self.image_to_tf(path)
-            self.dataset[idx] = preprocess_fit_train_image(0, 1024, image)
+            self.dataset[idx] = preprocess_fit_train_image(0, 3072, image)   #functional data 3072    structural 1024
 
 
 def resize(img, dx, dy, dz):

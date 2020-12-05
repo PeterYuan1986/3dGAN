@@ -88,11 +88,11 @@ class GAN():
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv6',
-                         use_bias=False))
-        model.add(BatchNormalization(axis=-1))
-        model.add(ReLU())
+        # model.add(UpSampling3D(size=2, data_format=None))
+        # model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv6',
+        #                  use_bias=False))
+        # model.add(BatchNormalization(axis=-1))
+        # model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in , 3, strides=1, padding='same', name='conv7',
@@ -112,7 +112,7 @@ class GAN():
     def build_discriminator(self):
         model = Sequential(name="Discriminator")
         ch_in = self.ch_in
-        model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(128, 128, 128, 1)))
+        model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(64, 64, 64, 1)))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
         model.add(Conv3D(ch_in * 2, 4, strides=2, padding='same', name='conv2'))
@@ -128,10 +128,10 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-        model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv5'))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        # model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv5'))
+        # model.add(BatchNormalization(momentum=0.8))
+        # model.add(LeakyReLU(alpha=0.2))
+        # model.add(Dropout(0.25))
 
         model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv6'))
         model.add(BatchNormalization(momentum=0.8))
@@ -208,9 +208,9 @@ def parse_args():
     desc = "Tensorflow implementation of Alpha_WGAN"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--phase', type=str, default='train', help='train or test ?')
-    parser.add_argument('--img_width', type=int, default='128', help='img_width')
-    parser.add_argument('--img_height', type=int, default='128', help='img_height')
-    parser.add_argument('--img_depth', type=int, default='128', help='img_depth')
+    parser.add_argument('--img_width', type=int, default='64', help='img_width')
+    parser.add_argument('--img_height', type=int, default='64', help='img_height')
+    parser.add_argument('--img_depth', type=int, default='64', help='img_depth')
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
     parser.add_argument('--epochs', type=int, default='400000', help='epochs')
@@ -227,7 +227,7 @@ def parse_args():
     parser.add_argument('--g_iter', type=int, default=1, help='g_iter')
     parser.add_argument('--cd_iter', type=int, default=1, help='cd_iter')
     parser.add_argument('--d_iter', type=int, default=1, help='d_iter')
-    parser.add_argument('--dataset', type=str, default='mri', help='dataset_name')
+    parser.add_argument('--dataset', type=str, default='functional', help='dataset_name')
     parser.add_argument('--checkpoint_dir', type=str, default='model',
                         help='Directory name to save the checkpoints')
     parser.add_argument('--result_dir', type=str, default='results',
