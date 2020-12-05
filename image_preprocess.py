@@ -4,6 +4,7 @@ import nibabel as nib
 import tensorflow as tf
 from glob import glob
 import skimage.transform as skTrans
+import SimpleITK as sitk
 
 
 class Image_data:
@@ -15,10 +16,17 @@ class Image_data:
         self.dataset = []
 
     def image_to_tf(self, img_path):
-        nib_img = nib.load(img_path)
+        tem = "temp.nii"
+        image = sitk.ReadImage(img_path)
+        sitk_hisequal = sitk.AdaptiveHistogramEqualizationImageFilter()
+        sitk_hisequal.SetAlpha(0.9)
+        sitk_hisequal.SetBeta(0.9)
+        sitk_hisequal.SetRadius(3)
+        sitk_hisequal = sitk_hisequal.Execute(image)
+        sitk.WriteImage(sitk_hisequal, tem)
+        nib_img = nib.load(tem)
         img_ary = nib_img.get_fdata()
-        img_ary[img_ary > 1800] = 1800
-        img_ary = adjust_dynamic_range(img_ary, range_in=(0, 1800), range_out=(0, 255))
+        img_ary = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(0, 255))
         img = resize(img_ary, self.img_width, self.img_height, self.img_depth)
         img[img > 255] = 255
         img[img < 0] = 0
