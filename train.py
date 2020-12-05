@@ -27,7 +27,7 @@ class GAN():
         # Build and compile the discriminator
         optimizer = Adam(0.00002, 0.5)
         self.discriminator = self.build_discriminator()
-        self.discriminator.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
+        self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         # Build the generator
         self.generator = self.build_generator()
         # The generator takes noise as input and generates imgs
@@ -41,7 +41,7 @@ class GAN():
         # The combined model (stacked generator and discriminator)
         # Trains the generator to fool the discriminator
         self.combined = Model(z, valid)
-        self.combined.compile(loss='mse', optimizer=optimizer)
+        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
 
         """ Checkpoint """
         self.ckpt = tf.train.Checkpoint(discriminator=self.discriminator, generator=self.generator, optimizer=optimizer)
@@ -191,11 +191,11 @@ class GAN():
 
     def save_imgs(self, epoch):
         noise = np.random.normal(0, 1, (1, self.latent_dim))
-        k=np.mean(noise)
         gen_img = self.generator.predict(noise)
         gen_imgs = postprocess_images(gen_img)
         tem=np.uint8(gen_imgs[0])
-        new_image = nib.Nifti1Image(tem, affine=np.eye(4))
+        img = skTrans.resize(tem, (92, 92, 32), order=1, preserve_range=True, anti_aliasing=False)
+        new_image = nib.Nifti1Image(img, affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
         if not os.path.exists(sample_dir):

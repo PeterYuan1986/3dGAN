@@ -16,20 +16,18 @@ class Image_data:
         self.dataset = []
 
     def image_to_tf(self, img_path):
-        tem = "temp.nii"
-        image = sitk.ReadImage(img_path)
-        sitk_hisequal = sitk.AdaptiveHistogramEqualizationImageFilter()
-        sitk_hisequal.SetAlpha(0.9)
-        sitk_hisequal.SetBeta(0.9)
-        sitk_hisequal.SetRadius(3)
-        sitk_hisequal = sitk_hisequal.Execute(image)
-        sitk.WriteImage(sitk_hisequal, tem)
-        nib_img = nib.load(tem)
+        # tem = "temp.nii"
+        # image = sitk.ReadImage(img_path)
+        # sitk_hisequal = sitk.AdaptiveHistogramEqualizationImageFilter()
+        # sitk_hisequal.SetAlpha(0.9)
+        # sitk_hisequal.SetBeta(0.9)
+        # sitk_hisequal.SetRadius(3)
+        # sitk_hisequal = sitk_hisequal.Execute(image)
+        # sitk.WriteImage(sitk_hisequal, tem)
+        nib_img = nib.load(img_path)
         img_ary = nib_img.get_fdata()
         img_ary = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(0, 255))
         img = resize(img_ary, self.img_width, self.img_height, self.img_depth)
-        img[img > 255] = 255
-        img[img < 0] = 0
         y = np.expand_dims(img, axis=3)
         x_decode = tf.convert_to_tensor(y, dtype='float32')
         return x_decode
@@ -45,7 +43,7 @@ class Image_data:
 
 
 def resize(img, dx, dy, dz):
-    return skTrans.resize(img, (dx, dy, dz), order=1, preserve_range=True)
+    return skTrans.resize(img, (dx, dy, dz), order=1, preserve_range=True,anti_aliasing=False)
 
 
 def adjust_dynamic_range(images, range_in, range_out, out_dtype='float32'):  # preprocess, change 255 into -1 to 1.
