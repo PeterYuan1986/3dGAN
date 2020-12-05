@@ -26,8 +26,9 @@ class Image_data:
         # sitk.WriteImage(sitk_hisequal, tem)
         nib_img = nib.load(img_path)
         img_ary = nib_img.get_fdata()
-        img_ary = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(0, 255))
-        img = resize(img_ary, self.img_width, self.img_height, self.img_depth)
+        img_ary = skTrans.resize(img_ary, (self.img_width, self.img_height, self.img_depth), order=1,
+                                 preserve_range=True, anti_aliasing=False)
+        img = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(-1, 1))
         y = np.expand_dims(img, axis=3)
         x_decode = tf.convert_to_tensor(y, dtype='float32')
         return x_decode
@@ -38,12 +39,11 @@ class Image_data:
         self.dataset.extend(image_list)
 
         for idx, path in enumerate(self.dataset):
-            image = self.image_to_tf(path)
-            self.dataset[idx] = preprocess_fit_train_image(0, 255, image)
+            self.dataset[idx] = self.image_to_tf(path)
 
 
 def resize(img, dx, dy, dz):
-    return skTrans.resize(img, (dx, dy, dz), order=1, preserve_range=True,anti_aliasing=False)
+    return skTrans.resize(img, (dx, dy, dz), order=1, preserve_range=True, anti_aliasing=False)
 
 
 def adjust_dynamic_range(images, range_in, range_out, out_dtype='float32'):  # preprocess, change 255 into -1 to 1.
