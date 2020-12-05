@@ -88,11 +88,11 @@ class GAN():
         model.add(BatchNormalization(axis=-1))
         model.add(ReLU())
 
-        model.add(UpSampling3D(size=2, data_format=None))
-        model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv6',
-                         use_bias=False))
-        model.add(BatchNormalization(axis=-1))
-        model.add(ReLU())
+        # model.add(UpSampling3D(size=2, data_format=None))
+        # model.add(Conv3D(ch_in*2, 3, strides=1, padding='same', name='conv6',
+        #                  use_bias=False))
+        # model.add(BatchNormalization(axis=-1))
+        # model.add(ReLU())
 
         model.add(UpSampling3D(size=2, data_format=None))
         model.add(Conv3D(ch_in , 3, strides=1, padding='same', name='conv7',
@@ -128,10 +128,10 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
 
-        model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv5'))
-        model.add(BatchNormalization(momentum=0.8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(0.25))
+        # model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv5'))
+        # model.add(BatchNormalization(momentum=0.8))
+        # model.add(LeakyReLU(alpha=0.2))
+        # model.add(Dropout(0.25))
 
         model.add(Conv3D(ch_in * 4, 3, strides=1, padding='same', name='conv6'))
         model.add(BatchNormalization(momentum=0.8))
@@ -191,10 +191,11 @@ class GAN():
 
     def save_imgs(self, epoch):
         noise = np.random.normal(0, 1, (1, self.latent_dim))
+        k=np.mean(noise)
         gen_img = self.generator.predict(noise)
         gen_imgs = postprocess_images(gen_img)
         tem=np.uint8(gen_imgs[0])
-        img = skTrans.resize(tem, (92, 92, 32), order=1, preserve_range=True, anti_aliasing=False)
+        img = skTrans.resize(tem, (92, 92, 36), order=1, preserve_range=True, anti_aliasing=False)
         new_image = nib.Nifti1Image(img, affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
@@ -208,9 +209,9 @@ def parse_args():
     desc = "Tensorflow implementation of Alpha_WGAN"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--phase', type=str, default='train', help='train or test ?')
-    parser.add_argument('--img_width', type=int, default='128', help='img_width')
-    parser.add_argument('--img_height', type=int, default='128', help='img_height')
-    parser.add_argument('--img_depth', type=int, default='128', help='img_depth')
+    parser.add_argument('--img_width', type=int, default='64', help='img_width')
+    parser.add_argument('--img_height', type=int, default='64', help='img_height')
+    parser.add_argument('--img_depth', type=int, default='64', help='img_depth')
     parser.add_argument('--img_channel', type=int, default='1', help='img_channel')
 
     parser.add_argument('--epochs', type=int, default='400000', help='epochs')

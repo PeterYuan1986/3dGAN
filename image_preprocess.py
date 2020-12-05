@@ -27,7 +27,7 @@ class Image_data:
         nib_img = nib.load(img_path)
         img_ary = nib_img.get_fdata()
         img_ary = skTrans.resize(img_ary, (self.img_width, self.img_height, self.img_depth), order=1,
-                                 preserve_range=True, anti_aliasing=False)
+                                 preserve_range=True)
         img = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(-1, 1))
         y = np.expand_dims(img, axis=3)
         x_decode = tf.convert_to_tensor(y, dtype='float32')
