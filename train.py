@@ -184,7 +184,7 @@ class GAN():
             # Plot the progress
             print("%d/%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (
             epoch, self.epochs, d_loss[0] * 100, 100 * d_loss[1], g_loss * 100))
-            if epoch % self.save_interval == 1000 and epoch != 0:
+            if epoch % self.save_interval == 0 and epoch != 0:
                 self.manager.save(checkpoint_number=epoch + 1)
                 self.save_imgs(epoch)
         self.manager.save(checkpoint_number=self.epochs)
@@ -215,7 +215,7 @@ def parse_args():
 
     parser.add_argument('--epochs', type=int, default='400000', help='epochs')
     parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
-    parser.add_argument('--save_interval', type=int, default=1, help='save_interval')
+    parser.add_argument('--save_interval', type=int, default=2000, help='save_interval')
 
     parser.add_argument('--grw', type=int, default='10', help='gradient_penalty_weight: Lamda1')
     parser.add_argument('--lamda2', type=int, default='10', help='Lamda2 in G_loss')
