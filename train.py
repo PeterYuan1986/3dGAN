@@ -115,14 +115,17 @@ class GAN():
         model.add(Conv3D(ch_in, 4, strides=2, padding='same', name='conv1', input_shape=(self.img_width,self.img_height,self.img_depth, 1)))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+
         model.add(Conv3D(ch_in * 2, 4, strides=2, padding='same', name='conv2'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+
         model.add(Conv3D(ch_in * 4, 4, strides=2, padding='same', name='conv3'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dropout(0.25))
+
         model.add(Conv3D(ch_in * 8, 4, strides=2, padding='same', name='conv4'))
         model.add(BatchNormalization(momentum=0.8))
         model.add(LeakyReLU(alpha=0.2))
@@ -195,8 +198,8 @@ class GAN():
         gen_img = self.generator.predict(noise)
         gen_imgs = postprocess_images(gen_img)
         tem=np.uint8(gen_imgs[0])
-        img = skTrans.resize(tem, (92, 92, 36), order=1, preserve_range=True, anti_aliasing=False)
-        new_image = nib.Nifti1Image(img, affine=np.eye(4))
+        #img = skTrans.resize(tem, (92, 92, 36), order=1, preserve_range=True, anti_aliasing=False)
+        new_image = nib.Nifti1Image(tem, affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
         if not os.path.exists(sample_dir):
