@@ -28,7 +28,7 @@ class Image_data:
         img_ary = nib_img.get_fdata()
         img_ary = skTrans.resize(img_ary, (self.img_width, self.img_height, self.img_depth), order=1,
                                  preserve_range=True)
-        img = adjust_dynamic_range(img_ary, range_in=(0, 1024), range_out=(-1, 1))
+        img = adjust_dynamic_range(img_ary, range_in=(0, 3071), range_out=(-1, 1))
         y = np.expand_dims(img, axis=3)
         x_decode = tf.convert_to_tensor(y, dtype='float32')
         return x_decode
@@ -40,6 +40,7 @@ class Image_data:
 
         for idx, path in enumerate(self.dataset):
             self.dataset[idx] = self.image_to_tf(path)
+            print (str(idx))
 
 
 def resize(img, dx, dy, dz):

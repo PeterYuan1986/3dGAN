@@ -198,8 +198,8 @@ class GAN():
         gen_img = self.generator.predict(noise)
         gen_imgs = postprocess_images(gen_img)
         tem=np.uint8(gen_imgs[0])
-        #img = skTrans.resize(tem, (92, 92, 36), order=1, preserve_range=True, anti_aliasing=False)
-        new_image = nib.Nifti1Image(tem, affine=np.eye(4))
+        img = skTrans.resize(tem, (92, 92, 36), order=1, preserve_range=True, anti_aliasing=False)
+        new_image = nib.Nifti1Image(img, affine=np.eye(4))
         name = self.dataset_name + '_epoch_' + str(epoch) + '.nii'
         sample_dir = './sample'
         if not os.path.exists(sample_dir):
@@ -231,7 +231,7 @@ def parse_args():
     parser.add_argument('--g_iter', type=int, default=1, help='g_iter')
     parser.add_argument('--cd_iter', type=int, default=1, help='cd_iter')
     parser.add_argument('--d_iter', type=int, default=1, help='d_iter')
-    parser.add_argument('--dataset', type=str, default='mri', help='dataset_name')
+    parser.add_argument('--dataset', type=str, default='functional', help='dataset_name')
     parser.add_argument('--checkpoint_dir', type=str, default='model',
                         help='Directory name to save the checkpoints')
     parser.add_argument('--result_dir', type=str, default='results',
